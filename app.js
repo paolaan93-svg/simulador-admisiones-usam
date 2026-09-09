@@ -3,29 +3,30 @@ let score = 0;
 let lastDiceRoll = 0;
 let currentQuestion = null;
 
-// Tablero de 30 casillas con Escaleras (avanzan) y Trampas/Serpientes (retroceden)
-const ladders = { 3: 11, 8: 16, 14: 22, 19: 25 };
-const snakes = { 12: 5, 18: 10, 24: 15, 28: 20 };
+// Mapa para tablero de 40 casillas
+const ladders = { 4: 14, 10: 22, 18: 30, 26: 36 };
+const snakes = { 15: 6, 23: 12, 32: 20, 38: 28 };
+const penaltyCells = [7, 13, 21, 29, 35];
 
-// Generar tablero dinámico
 function buildBoard() {
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
 
-  for (let i = 30; i >= 1; i--) {
+  for (let i = 40; i >= 1; i--) {
     const cell = document.createElement('div');
     cell.className = 'cell';
     cell.id = `cell-${i}`;
 
     let label = '';
     if (i === 1) { cell.classList.add('start'); label = '🚀 INICIO'; }
-    else if (i === 30) { cell.classList.add('finish'); label = '🏆 META'; }
+    else if (i === 40) { cell.classList.add('finish'); label = '🏆 META'; }
     else if (ladders[i]) { cell.classList.add('ladder'); label = `🪜 +${ladders[i] - i}`; }
     else if (snakes[i]) { cell.classList.add('snake'); label = `🐍 -${i - snakes[i]}`; }
+    else if (penaltyCells.includes(i)) { cell.classList.add('penalty'); label = '🎭 RETO'; }
 
     cell.innerHTML = `
       <span class="cell-num">${i}</span>
-      <span style="font-size:10px; margin-top:12px;">${label}</span>
+      <span style="font-size:9px; margin-top:10px;">${label}</span>
       <div id="token-${i}"></div>
     `;
     boardEl.appendChild(cell);
@@ -54,22 +55,44 @@ function rollDice() {
 
   setTimeout(() => {
     currentPos += lastDiceRoll;
-    if (currentPos >= 30) {
-      currentPos = 30;
+    if (currentPos >= 40) {
+      currentPos = 40;
       updateTokenPosition();
       finishGame();
       return;
     }
     updateTokenPosition();
-    triggerQuestion();
+
+    // Evaluar tipo de casilla
+    if (penaltyCells.includes(currentPos)) {
+      triggerPenalty();
+    } else {
+      triggerQuestion();
+    }
   }, 600);
+}
+
+function triggerPenalty() {
+  document.getElementById('dice-area').classList.add('hidden');
+  document.getElementById('question-card').classList.add('hidden');
+  document.getElementById('penalty-card').classList.remove('hidden');
+
+  const randomPenalty = penalties[Math.floor(Math.random() * penalties.length)];
+  document.getElementById('penalty-text').innerText = randomPenalty;
+}
+
+function completePenalty() {
+  document.getElementById('penalty-card').classList.add('hidden');
+  document.getElementById('dice-area').classList.remove('hidden');
+  document.querySelector('.dice-btn').disabled = false;
+  document.getElementById('dice-result').innerText = '';
 }
 
 function triggerQuestion() {
   document.getElementById('dice-area').classList.add('hidden');
+  document.getElementById('penalty-card').classList.add('hidden');
   document.getElementById('question-card').classList.remove('hidden');
 
-  // Seleccionar pregunta aleatoria
   const randomIndex = Math.floor(Math.random() * questions.length);
   currentQuestion = questions[randomIndex];
 
@@ -100,17 +123,15 @@ function answerQuestion(selectedIdx) {
     feedbackEl.className = 'feedback correct';
     feedbackEl.innerHTML = `<strong>¡Respuesta Correcta!</strong> ${currentQuestion.explanation}`;
     
-    // Verificar si cayó en una escalera
     if (ladders[currentPos]) {
       const newPos = ladders[currentPos];
-      feedbackEl.innerHTML += `<br><strong>🪜 ¡Genial! Subes a la casilla ${newPos} por responder acertadamente.</strong>`;
+      feedbackEl.innerHTML += `<br><strong>🪜 ¡Genial! Subes a la casilla ${newPos}.</strong>`;
       currentPos = newPos;
     }
   } else {
     feedbackEl.className = 'feedback wrong';
     feedbackEl.innerHTML = `<strong>Incorrecto.</strong> ${currentQuestion.explanation}`;
     
-    // Verificar si cayó en una serpiente/trampa
     if (snakes[currentPos]) {
       const newPos = snakes[currentPos];
       feedbackEl.innerHTML += `<br><strong>🐍 ¡Cuidado! Caes a la casilla ${newPos}.</strong>`;
@@ -128,7 +149,7 @@ function continueGame() {
   document.querySelector('.dice-btn').disabled = false;
   document.getElementById('dice-result').innerText = '';
 
-  if (currentPos >= 30) {
+  if (currentPos >= 40) {
     finishGame();
   }
 }
@@ -136,11 +157,11 @@ function continueGame() {
 function finishGame() {
   document.getElementById('dice-area').classList.add('hidden');
   document.getElementById('question-card').classList.add('hidden');
+  document.getElementById('penalty-card').classList.add('hidden');
   document.getElementById('victory-card').classList.remove('hidden');
 
   document.getElementById('final-stats').innerText = 
-    `Llegaste a la meta acumulando ${score} aciertos durante el recorrido.`;
+    `¡Completaron el tablero de 40 casillas logrando ${score} aciertos durante la sesión!`;
 }
 
-// Inicializar al cargar
 window.onload = buildBoard;
