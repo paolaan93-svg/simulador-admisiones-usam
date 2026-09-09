@@ -9,12 +9,26 @@ let currentTeamIdx = 0;
 let lastDiceRoll = 0;
 let currentQuestion = null;
 
+// Control de preguntas sin repetición
+let availableQuestions = [];
+
 // Tablero de 40 casillas
 const ladders = { 4: 14, 10: 22, 18: 30, 26: 36 };
 const snakes = { 15: 6, 23: 12, 32: 20, 38: 28 };
 const penaltyCells = [7, 13, 21, 29, 35];
 
+// Mezclar preguntas (Algoritmo Fisher-Yates)
+function resetAndShuffleQuestions() {
+  availableQuestions = [...questions];
+  for (let i = availableQuestions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [availableQuestions[i], availableQuestions[j]] = [availableQuestions[j], availableQuestions[i]];
+  }
+}
+
 function buildBoard() {
+  resetAndShuffleQuestions();
+
   const boardEl = document.getElementById('board');
   boardEl.innerHTML = '';
 
@@ -41,10 +55,8 @@ function buildBoard() {
 }
 
 function updateTokensAndScore() {
-  // Limpiar tokens anteriores
   document.querySelectorAll('.tokens-container').forEach(c => c.innerHTML = '');
 
-  // Colocar token de cada equipo en su casilla
   teams.forEach((t, idx) => {
     const slot = document.getElementById(`tokens-cell-${t.pos}`);
     if (slot) {
@@ -54,12 +66,10 @@ function updateTokensAndScore() {
       slot.appendChild(tokenEl);
     }
 
-    // Actualizar marcadores individuales
     document.getElementById(`pos-${idx}`).innerText = t.pos;
     document.getElementById(`score-${idx}`).innerText = t.score;
   });
 
-  // Actualizar indicador de turno
   const currentTeam = teams[currentTeamIdx];
   const turnBar = document.getElementById('team-turn-bar');
   turnBar.innerText = `Turno de: ${currentTeam.name}`;
@@ -86,7 +96,6 @@ function rollDice() {
 
     updateTokensAndScore();
 
-    // Determinar casilla
     if (penaltyCells.includes(currentTeam.pos)) {
       triggerPenalty();
     } else {
@@ -114,8 +123,13 @@ function triggerQuestion() {
   document.getElementById('penalty-card').classList.add('hidden');
   document.getElementById('question-card').classList.remove('hidden');
 
-  const randomIndex = Math.floor(Math.random() * questions.length);
-  currentQuestion = questions[randomIndex];
+  // Si se agotan las preguntas, se recarga el mazo barajado
+  if (availableQuestions.length === 0) {
+    resetAndShuffleQuestions();
+  }
+
+  // Extraer la primera pregunta sin repetir
+  currentQuestion = availableQuestions.pop();
 
   document.getElementById('q-title').innerText = `${teams[currentTeamIdx].name} — ${currentQuestion.question}`;
   const optsContainer = document.getElementById('opts-container');
@@ -187,7 +201,8 @@ function finishGame(winner) {
   document.getElementById('victory-card').classList.remove('hidden');
 
   document.getElementById('final-stats').innerText = 
-    `🏆 ¡El ${winner.name} ha alcanzado la casilla 40 y ganado la sesión con ${winner.score} aciertos!`;
+    `🏆 ¡El ${winner.name} alcanzó la casilla 40 y ganó la sesión con ${winner.score} aciertos!`;
 }
 
 window.onload = buildBoard;
+
