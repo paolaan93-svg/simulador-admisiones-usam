@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gran Escalera USAM - 40 Casillas & Penitencias</title>
+  <title>Gran Escalera USAM - Multiequipos (40 Casillas)</title>
   <style>
     :root {
       --primary: #003366;
@@ -23,13 +23,13 @@
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
-      max-width: 1300px;
+      max-width: 1350px;
       margin: 0 auto;
       justify-content: center;
     }
     .board-container {
-      flex: 1 1 600px;
-      max-width: 750px;
+      flex: 1 1 650px;
+      max-width: 780px;
       background: #232334;
       padding: 15px;
       border-radius: 12px;
@@ -49,57 +49,80 @@
       flex-direction: column;
       align-items: center;
       justify-content: space-between;
-      padding: 4px;
+      padding: 3px;
       position: relative;
       font-weight: bold;
-      font-size: 13px;
+      font-size: 12px;
       box-sizing: border-box;
       text-align: center;
     }
-    .cell-num { position: absolute; top: 3px; left: 5px; font-size: 11px; opacity: 0.7; }
+    .cell-num { position: absolute; top: 2px; left: 4px; font-size: 10px; opacity: 0.7; }
     .cell.ladder { background: #1b4332; border: 2px dashed #52b788; }
     .cell.snake { background: #49111c; border: 2px dashed #f72585; }
     .cell.penalty { background: #5c3d11; border: 2px dashed #ffb703; }
     .cell.start { background: #0077b6; }
     .cell.finish { background: #ffb703; color: #000; font-weight: 900; }
-    .token {
-      width: 26px;
-      height: 26px;
-      background: #ff4757;
-      border: 3px solid #fff;
-      border-radius: 50%;
-      box-shadow: 0 0 10px #ff4757;
-      transition: all 0.4s ease;
+    
+    .tokens-container {
+      display: flex;
+      gap: 3px;
+      justify-content: center;
+      align-items: center;
       margin-top: auto;
+      min-height: 22px;
     }
+    .token {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(0,0,0,0.6);
+      transition: all 0.3s ease;
+    }
+    .token.red { background: #ff4757; }
+    .token.blue { background: #1e90ff; }
+    .token.green { background: #2ed573; }
+
     .control-panel {
       flex: 1 1 400px;
       max-width: 500px;
       background: var(--card-bg);
       color: #222;
-      padding: 25px;
+      padding: 22px;
       border-radius: 12px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       display: flex;
       flex-direction: column;
     }
     h1 { color: var(--primary); margin-top: 0; text-align: center; font-size: 22px; }
-    .status-box {
-      background: #eef2f7;
+    
+    .team-turn-bar {
       padding: 12px;
       border-radius: 8px;
-      margin-bottom: 15px;
-      font-weight: 600;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      margin-bottom: 12px;
+      transition: background 0.3s;
+    }
+    .scoreboard {
       display: flex;
-      justify-content: space-between;
+      justify-content: space-around;
+      background: #f1f5f9;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 13px;
+      font-weight: 600;
       color: #333;
     }
-    .dice-area { text-align: center; margin: 15px 0; }
+    .dice-area { text-align: center; margin: 10px 0; }
     .dice-btn {
       background: #ff6b6b;
       color: white;
       border: none;
-      padding: 14px 28px;
+      padding: 12px 24px;
       font-size: 18px;
       font-weight: bold;
       border-radius: 8px;
@@ -107,8 +130,8 @@
       box-shadow: 0 4px 12px rgba(255,107,107,0.4);
       transition: 0.2s;
     }
-    .dice-btn:hover { background: #ee5253; transform: scale(1.03); }
-    .dice-result { font-size: 32px; font-weight: bold; margin-top: 8px; color: var(--primary); min-height: 40px; }
+    .dice-btn:hover { background: #ee5253; transform: scale(1.02); }
+    .dice-result { font-size: 30px; font-weight: bold; margin-top: 6px; color: var(--primary); min-height: 36px; }
     .card-box {
       background: #f8f9fa;
       border-left: 5px solid var(--secondary);
@@ -122,8 +145,8 @@
       text-align: left;
       background: #fff;
       border: 1px solid #ccd1d9;
-      padding: 10px 14px;
-      margin: 6px 0;
+      padding: 10px 12px;
+      margin: 5px 0;
       border-radius: 6px;
       cursor: pointer;
       font-size: 14px;
@@ -131,59 +154,67 @@
     }
     .opt-btn:hover { background: #e6f0fa; border-color: var(--primary); }
     .feedback {
-      margin-top: 12px;
+      margin-top: 10px;
       padding: 10px;
       border-radius: 6px;
       font-size: 13px;
       display: none;
     }
     .feedback.correct { background: #d4edda; color: #155724; }
-    .feedback.wrong { background: #f8d7da; color: #721c24; }
+    .feedback.wrong { background: #f8f9fa; color: #721c24; }
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
   <div class="main-layout">
-    <!-- TABLERO VISUAL DE 40 CASILLAS -->
+    <!-- TABLERO VISUAL 40 CASILLAS -->
     <div class="board-container">
       <div class="board" id="board"></div>
     </div>
 
-    <!-- PANEL DE CONTROL Y ACTIVIDADES -->
+    <!-- PANEL DE CONTROL MULTIEQUIPO -->
     <div class="control-panel">
-      <h1>🧗 Gran Escalera USAM (40 Casillas)</h1>
+      <h1>🧗 Escalera USAM - Multiequipos</h1>
       
-      <div class="status-box">
-        <span>Posición: Casilla <span id="pos-display">1</span> / 40</span>
-        <span>Aciertos: <span id="score-display">0</span></span>
+      <!-- BARRA DE TURNO DEL EQUIPO -->
+      <div id="team-turn-bar" class="team-turn-bar" style="background: #ff4757;">
+        Turno de: 🔴 Equipo Rojo
       </div>
 
+      <!-- MARCADOR -->
+      <div class="scoreboard">
+        <div>🔴 Rojo: C<span id="pos-0">1</span> (<span id="score-0">0</span> pts)</div>
+        <div>🔵 Azul: C<span id="pos-1">1</span> (<span id="score-1">0</span> pts)</div>
+        <div>🟢 Verde: C<span id="pos-2">1</span> (<span id="score-2">0</span> pts)</div>
+      </div>
+
+      <!-- DADO -->
       <div class="dice-area" id="dice-area">
         <button class="dice-btn" onclick="rollDice()">🎲 Lanzar Dado</button>
         <div class="dice-result" id="dice-result"></div>
       </div>
 
-      <!-- TARJETA DE PREGUNTAS -->
+      <!-- PREGUNTA -->
       <div class="card-box hidden" id="question-card">
         <h4 id="q-title" style="margin-top:0; color:#003366;"></h4>
         <div id="opts-container"></div>
         <div id="feedback" class="feedback"></div>
-        <button id="next-btn" class="dice-btn hidden" style="width:100%; margin-top:10px; font-size:15px; padding:10px;" onclick="continueGame()">Continuar Avanzando ➡️</button>
+        <button id="next-btn" class="dice-btn hidden" style="width:100%; margin-top:10px; font-size:15px; padding:10px;" onclick="continueGame()">Pasar al Siguiente Turno ➡️</button>
       </div>
 
-      <!-- TARJETA DE PENITENCIAS DIVERTIDAS -->
+      <!-- PENITENCIA DIVERTIDA -->
       <div class="card-box penalty-mode hidden" id="penalty-card">
         <h3 style="margin-top:0; color:#d97706;">🎭 ¡CASILLA DE PENITENCIA!</h3>
-        <p id="penalty-text" style="font-size:16px; font-weight:bold; color:#333;"></p>
-        <p style="font-size:13px; color:#666;">Cumple el reto en Teams para poder tirar el dado en el siguiente turno.</p>
+        <p id="penalty-text" style="font-size:15px; font-weight:bold; color:#333;"></p>
+        <p style="font-size:12px; color:#666;">El equipo debe cumplir el reto en vivo por Teams para poder avanzar en su siguiente turno.</p>
         <button class="dice-btn" style="width:100%; margin-top:10px; font-size:15px; padding:10px; background:#d97706;" onclick="completePenalty()">✅ Penitencia Cumplida</button>
       </div>
 
-      <!-- PANTALLA DE VICTORIA -->
+      <!-- VICTORIA -->
       <div class="card-box hidden" id="victory-card" style="text-align:center;">
-        <h2 style="color:#2ed573;">🎉 ¡CAMPEÓN DE LA SESIÓN!</h2>
-        <p id="final-stats"></p>
-        <button class="dice-btn" onclick="location.reload()">🎮 Reiniciar Juego</button>
+        <h2 style="color:#2ed573;">🎉 ¡TENEMOS EQUIPO GANADOR!</h2>
+        <p id="final-stats" style="font-size:16px; font-weight:bold;"></p>
+        <button class="dice-btn" onclick="location.reload()">🎮 Volver a Jugar</button>
       </div>
     </div>
   </div>
@@ -192,4 +223,5 @@
   <script src="app.js"></script>
 </body>
 </html>
+
 
