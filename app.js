@@ -1,9 +1,15 @@
-let currentPos = 1;
-let score = 0;
+// Configuración de los 3 Equipos
+const teams = [
+  { name: "🔴 Equipo Rojo", color: "red", bg: "#ff4757", pos: 1, score: 0 },
+  { name: "🔵 Equipo Azul", color: "blue", bg: "#1e90ff", pos: 1, score: 0 },
+  { name: "🟢 Equipo Verde", color: "green", bg: "#2ed573", pos: 1, score: 0 }
+];
+
+let currentTeamIdx = 0;
 let lastDiceRoll = 0;
 let currentQuestion = null;
 
-// Mapa para tablero de 40 casillas
+// Tablero de 40 casillas
 const ladders = { 4: 14, 10: 22, 18: 30, 26: 36 };
 const snakes = { 15: 6, 23: 12, 32: 20, 38: 28 };
 const penaltyCells = [7, 13, 21, 29, 35];
@@ -26,45 +32,62 @@ function buildBoard() {
 
     cell.innerHTML = `
       <span class="cell-num">${i}</span>
-      <span style="font-size:9px; margin-top:10px;">${label}</span>
-      <div id="token-${i}"></div>
+      <span style="font-size:8px; margin-top:8px;">${label}</span>
+      <div class="tokens-container" id="tokens-cell-${i}"></div>
     `;
     boardEl.appendChild(cell);
   }
-  updateTokenPosition();
+  updateTokensAndScore();
 }
 
-function updateTokenPosition() {
-  document.querySelectorAll('.token').forEach(el => el.remove());
-  const targetSlot = document.getElementById(`token-${currentPos}`);
-  if (targetSlot) {
-    const token = document.createElement('div');
-    token.className = 'token';
-    targetSlot.appendChild(token);
-  }
-  document.getElementById('pos-display').innerText = currentPos;
-  document.getElementById('score-display').innerText = score;
+function updateTokensAndScore() {
+  // Limpiar tokens anteriores
+  document.querySelectorAll('.tokens-container').forEach(c => c.innerHTML = '');
+
+  // Colocar token de cada equipo en su casilla
+  teams.forEach((t, idx) => {
+    const slot = document.getElementById(`tokens-cell-${t.pos}`);
+    if (slot) {
+      const tokenEl = document.createElement('div');
+      tokenEl.className = `token ${t.color}`;
+      tokenEl.title = t.name;
+      slot.appendChild(tokenEl);
+    }
+
+    // Actualizar marcadores individuales
+    document.getElementById(`pos-${idx}`).innerText = t.pos;
+    document.getElementById(`score-${idx}`).innerText = t.score;
+  });
+
+  // Actualizar indicador de turno
+  const currentTeam = teams[currentTeamIdx];
+  const turnBar = document.getElementById('team-turn-bar');
+  turnBar.innerText = `Turno de: ${currentTeam.name}`;
+  turnBar.style.background = currentTeam.bg;
 }
 
 function rollDice() {
   const diceBtn = document.querySelector('.dice-btn');
   diceBtn.disabled = true;
-  
+
   lastDiceRoll = Math.floor(Math.random() * 6) + 1;
   document.getElementById('dice-result').innerText = `🎲 ${lastDiceRoll}`;
 
   setTimeout(() => {
-    currentPos += lastDiceRoll;
-    if (currentPos >= 40) {
-      currentPos = 40;
-      updateTokenPosition();
-      finishGame();
+    const currentTeam = teams[currentTeamIdx];
+    currentTeam.pos += lastDiceRoll;
+
+    if (currentTeam.pos >= 40) {
+      currentTeam.pos = 40;
+      updateTokensAndScore();
+      finishGame(currentTeam);
       return;
     }
-    updateTokenPosition();
 
-    // Evaluar tipo de casilla
-    if (penaltyCells.includes(currentPos)) {
+    updateTokensAndScore();
+
+    // Determinar casilla
+    if (penaltyCells.includes(currentTeam.pos)) {
       triggerPenalty();
     } else {
       triggerQuestion();
@@ -78,14 +101,12 @@ function triggerPenalty() {
   document.getElementById('penalty-card').classList.remove('hidden');
 
   const randomPenalty = penalties[Math.floor(Math.random() * penalties.length)];
-  document.getElementById('penalty-text').innerText = randomPenalty;
+  document.getElementById('penalty-text').innerText = `${teams[currentTeamIdx].name}: ${randomPenalty}`;
 }
 
 function completePenalty() {
   document.getElementById('penalty-card').classList.add('hidden');
-  document.getElementById('dice-area').classList.remove('hidden');
-  document.querySelector('.dice-btn').disabled = false;
-  document.getElementById('dice-result').innerText = '';
+  nextTurn();
 }
 
 function triggerQuestion() {
@@ -96,7 +117,7 @@ function triggerQuestion() {
   const randomIndex = Math.floor(Math.random() * questions.length);
   currentQuestion = questions[randomIndex];
 
-  document.getElementById('q-title').innerText = currentQuestion.question;
+  document.getElementById('q-title').innerText = `${teams[currentTeamIdx].name} — ${currentQuestion.question}`;
   const optsContainer = document.getElementById('opts-container');
   optsContainer.innerHTML = '';
   document.getElementById('feedback').style.display = 'none';
@@ -118,50 +139,55 @@ function answerQuestion(selectedIdx) {
   const feedbackEl = document.getElementById('feedback');
   feedbackEl.style.display = 'block';
 
+  const currentTeam = teams[currentTeamIdx];
+
   if (selectedIdx === currentQuestion.answer) {
-    score++;
+    currentTeam.score++;
     feedbackEl.className = 'feedback correct';
     feedbackEl.innerHTML = `<strong>¡Respuesta Correcta!</strong> ${currentQuestion.explanation}`;
-    
-    if (ladders[currentPos]) {
-      const newPos = ladders[currentPos];
-      feedbackEl.innerHTML += `<br><strong>🪜 ¡Genial! Subes a la casilla ${newPos}.</strong>`;
-      currentPos = newPos;
+
+    if (ladders[currentTeam.pos]) {
+      const newPos = ladders[currentTeam.pos];
+      feedbackEl.innerHTML += `<br><strong>🪜 ¡Genial! Suben a la casilla ${newPos}.</strong>`;
+      currentTeam.pos = newPos;
     }
   } else {
     feedbackEl.className = 'feedback wrong';
     feedbackEl.innerHTML = `<strong>Incorrecto.</strong> ${currentQuestion.explanation}`;
-    
-    if (snakes[currentPos]) {
-      const newPos = snakes[currentPos];
-      feedbackEl.innerHTML += `<br><strong>🐍 ¡Cuidado! Caes a la casilla ${newPos}.</strong>`;
-      currentPos = newPos;
+
+    if (snakes[currentTeam.pos]) {
+      const newPos = snakes[currentTeam.pos];
+      feedbackEl.innerHTML += `<br><strong>🐍 ¡Cuidado! Caen a la casilla ${newPos}.</strong>`;
+      currentTeam.pos = newPos;
     }
   }
 
-  updateTokenPosition();
+  updateTokensAndScore();
   document.getElementById('next-btn').classList.remove('hidden');
 }
 
 function continueGame() {
   document.getElementById('question-card').classList.add('hidden');
+  nextTurn();
+}
+
+function nextTurn() {
+  currentTeamIdx = (currentTeamIdx + 1) % teams.length;
+  updateTokensAndScore();
+
   document.getElementById('dice-area').classList.remove('hidden');
   document.querySelector('.dice-btn').disabled = false;
   document.getElementById('dice-result').innerText = '';
-
-  if (currentPos >= 40) {
-    finishGame();
-  }
 }
 
-function finishGame() {
+function finishGame(winner) {
   document.getElementById('dice-area').classList.add('hidden');
   document.getElementById('question-card').classList.add('hidden');
   document.getElementById('penalty-card').classList.add('hidden');
   document.getElementById('victory-card').classList.remove('hidden');
 
   document.getElementById('final-stats').innerText = 
-    `¡Completaron el tablero de 40 casillas logrando ${score} aciertos durante la sesión!`;
+    `🏆 ¡El ${winner.name} ha alcanzado la casilla 40 y ganado la sesión con ${winner.score} aciertos!`;
 }
 
 window.onload = buildBoard;
